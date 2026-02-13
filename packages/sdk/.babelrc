@@ -1,0 +1,15 @@
+{
+  // 预设（Presets）是从后往前执行的：先处理 TS，再处理 JS 兼容性
+  "presets": [
+    [
+      "@babel/preset-env", // 智能预设：负责将新版 JS 语法转换为目标环境支持的语法
+      {
+        // 关键配置：设置为 false，告诉 Babel 不要转换 ES 模块语法（import/export）。
+        // 必须保留 ES 模块语法，Rollup 才能进行静态分析和 Tree-shaking（移除未使用的代码）。
+        "modules": false
+        // "useBuiltIns": "usage", // 可选：根据代码使用情况自动引入 Polyfill（补丁），需安装 core-js
+        // "corejs": 3             // 配套指定 core-js 版本
+      }
+    ],
+  ]
+}
