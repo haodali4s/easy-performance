@@ -1,73 +1,57 @@
-# React + TypeScript + Vite
+# Monitor Monorepo
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+一个性能监控并上报的小工具，包含核心监控 SDK 和配套的可视化 Dashboard，支持个性化选择监控指标和自定义监控阈值。
 
-Currently, two official plugins are available:
+### ✨ 特性
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+支持如下指标监控
 
-## React Compiler
+- **加载与渲染 (Loading & Rendering)**: FP, FCP, LCP, Load, TTFB
+- **交互响应 (Interaction)**: FID, INP, Long Task
+- **视觉稳定性 (Visual Stability)**: CLS
+- **资源与网络 (Resource & Network)**: 静态资源加载耗时, API 请求耗时
+- **数据上报**: 支持自动上报性能数据到指定服务器
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 🚀 快速开始
 
-## Expanding the ESLint configuration
+## 📦 安装
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+```bash
+# npm
+npm install easy-performance
 
-```js
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
+# yarn
+yarn add easy-performance
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+# pnpm
+pnpm add easy-performance
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🛠 使用方法
 
-```js
-// eslint.config.js
-import reactX from "eslint-plugin-react-x";
-import reactDom from "eslint-plugin-react-dom";
+`easy-performance` 提供了一个开箱即用的 React 组件，只需将其添加到你的应用根节点即可。
 
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs["recommended-typescript"],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+```tsx
+import PerformanceDebugger from "easy-performance";
+
+function App() {
+  return (
+    <div>
+      {/* 你的其他业务组件 */}
+
+      {/* 将监控组件放在应用的最外层 */}
+      <PerformanceDebugger />
+    </div>
+  );
+}
+
+export default App;
 ```
+
+启动应用后，你会在屏幕右下角看到一个悬浮图标：
+
+1. **点击图标**：首次点击会打开配置面板，可选择需要监控的指标（FCP, LCP, INP, Network 等）及自定义阈值。
+2. **开始监控**：配置完成后点击 "开始监控"，SDK 将自动采集数据。
+3. **查看数据**：再次点击图标即可实时查看各项性能指标的卡片展示。
+
+无需额外配置 `PerformanceMonitor` SDK，该组件会自动管理 SDK 的初始化与数据上报。

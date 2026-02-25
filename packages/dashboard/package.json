@@ -1,6 +1,19 @@
 {
   "name": "easy-performance",
-  "version": "1.0.0",
+  "version": "1.0.5",
+  "description": "A visualization dashboard for easy-performance monitor",
+  "keywords": [
+    "performance",
+    "dashboard",
+    "visualization",
+    "monitor",
+    "react",
+    "charts"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
   "type": "module",
   "files": [
     "dist"
@@ -22,15 +35,22 @@
     "preview": "vite preview"
   },
   "peerDependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
   },
-  "dependencies": {
-    "@monitor/sdk": "workspace:*"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "@monitor/sdk": "workspace:*",
     "less": "^4.5.1",
     "vite-plugin-css-injected-by-js": "^3.5.2",
     "vite-plugin-dts": "^4.5.4"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/haodali4s/easy-performance.git"
+  },
+  "bugs": {
+    "url": "https://github.com/haodali4s/easy-performance/issues"
+  },
+  "homepage": "https://github.com/haodali4s/easy-performance#readme"
 }

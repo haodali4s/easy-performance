@@ -57,9 +57,7 @@ export const LongTaskCard: React.FC<LongTaskCardProps> = ({ tasks }) => {
                       <span className="context-info">
                         {attribution.containerType}
                       </span>
-                      <span className="entry-type">
-                        {attribution.entryType}
-                      </span>
+                      <span className="entry-type">{attribution.name}</span>
                     </>
                   )}
                 </div>

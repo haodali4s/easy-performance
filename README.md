@@ -14,6 +14,44 @@
 
 ### 🚀 快速开始
 
-## 📊 easy-performance (Dashboard)
+## 📦 安装
 
-一个嵌入式的性能监控面板，方便在开发或生产环境中实时查看性能数据。
+```bash
+# npm
+npm install easy-performance
+
+# yarn
+yarn add easy-performance
+
+# pnpm
+pnpm add easy-performance
+```
+
+## 🛠 使用方法
+
+`easy-performance` 提供了一个开箱即用的 React 组件，只需将其添加到你的应用根节点即可。
+
+```tsx
+import PerformanceDebugger from "easy-performance";
+
+function App() {
+  return (
+    <div>
+      {/* 你的其他业务组件 */}
+
+      {/* 将监控组件放在应用的最外层 */}
+      <PerformanceDebugger />
+    </div>
+  );
+}
+
+export default App;
+```
+
+启动应用后，你会在屏幕右下角看到一个悬浮图标：
+
+1. **点击图标**：首次点击会打开配置面板，可选择需要监控的指标（FCP, LCP, INP, Network 等）及自定义阈值。
+2. **开始监控**：配置完成后点击 "开始监控"，SDK 将自动采集数据。
+3. **查看数据**：再次点击图标即可实时查看各项性能指标的卡片展示。
+
+无需额外配置 `PerformanceMonitor` SDK，该组件会自动管理 SDK 的初始化与数据上报。

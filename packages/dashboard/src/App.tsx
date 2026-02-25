@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./index.css";
-import PerformanceDebugger from "D:/front/学工程化/rollup/packages/dashboard/dist/easy-performance.es.js";
+import PerformanceDebugger from "./index";
 
 // 独立的监控报告页面组件
 // 这个组件会渲染到一个全新的 Window 中
@@ -68,7 +68,6 @@ function App() {
           Trigger CLS (Wait 1s)
         </button>
       </div>
-      {/* Floating Debugger */}、
       <PerformanceDebugger />
     </div>
   );

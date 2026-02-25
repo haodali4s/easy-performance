@@ -1,8 +1,8 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-  typeof define === 'function' && define.amd ? define(['exports'], factory) :
-  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.PerformanceSDK = {}));
-})(this, (function (exports) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+  typeof define === 'function' && define.amd ? define(factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.PerformanceSDK = factory());
+})(this, (function () { 'use strict';
 
   function _arrayLikeToArray(r, a) {
     (null == a || a > r.length) && (a = r.length);
@@ -101,19 +101,20 @@
       try {
         for (_iterator.s(); !(_step = _iterator.n()).done;) {
           var entry = _step.value;
-          if (entry.name === 'first-contentful-paint' || entry.name === 'first-paint') {
-            if (entry.name === 'first-contentful-paint') {
+          if (entry.name === "first-contentful-paint" || entry.name === "first-paint") {
+            if (entry.name === "first-contentful-paint") {
               observer.disconnect(); // FP PCP一辈子只发生一次，抓到就撤，省内存
             }
             var json = entry.toJSON();
             // 简单的名称映射用于日志
             var nameMap = {
-              'first-paint': 'FP',
-              'first-contentful-paint': 'FCP'
+              "first-paint": "FP",
+              "first-contentful-paint": "FCP"
             };
             var reportData = Object.assign(Object.assign({}, json), {
-              type: 'performance',
+              type: "performance",
               name: nameMap[entry.name],
+              value: entry.startTime,
               pageUrl: window.location.href
             });
             report(reportData);
@@ -127,7 +128,7 @@
     };
     var observer = new PerformanceObserver(handler); // 1. 创建观测者
     observer.observe({
-      type: 'paint',
+      type: "paint",
       buffered: true
     }); // 2. 开始蹲守 'paint' 频道 buffered: true 是关键，确保能拿到 SDK 初始化之前的记录
     return function () {
@@ -136,7 +137,7 @@
   };
 
   function getSelector$1(element) {
-    if (!element || element.nodeType !== 1) return '';
+    if (!element || element.nodeType !== 1) return "";
     // 如果有 id，直接返回 #id
     if (element.id) {
       return "#".concat(element.id);
@@ -152,14 +153,14 @@
         break;
       }
       // 加上 class
-      var className = element.getAttribute('class');
+      var className = element.getAttribute("class");
       if (className) {
-        name += '.' + className.split(/\s+/).join('.');
+        name += "." + className.split(/\s+/).join(".");
       }
       path.unshift(name);
       element = element.parentElement;
     }
-    return path.join(' > ');
+    return path.join(" > ");
   }
 
   function startLCP(report) {
@@ -181,7 +182,7 @@
       }
     });
     observer.observe({
-      type: 'largest-contentful-paint',
+      type: "largest-contentful-paint",
       buffered: true
     });
     var sendReport = function sendReport() {
@@ -189,27 +190,27 @@
       hasReported = true;
       var json = lcpEntry.toJSON();
       var reportData = Object.assign(Object.assign({}, json), {
-        lcpTime: lcpEntry.startTime,
+        value: lcpEntry.startTime,
         elementSelector: getSelector$1(lcpEntry.element),
-        type: 'performance',
-        name: 'LCP',
+        type: "performance",
+        name: "LCP",
         pageUrl: window.location.href
       });
       report(reportData);
     };
     // 页面隐藏或用户首次交互时，上报最终 LCP
     var onHidden = function onHidden() {
-      if (document.visibilityState === 'hidden') sendReport();
+      if (document.visibilityState === "hidden") sendReport();
     };
     // 监听页面显示隐藏
-    document.addEventListener('visibilitychange', onHidden, {
+    document.addEventListener("visibilitychange", onHidden, {
       once: true
     });
-    window.addEventListener('pagehide', sendReport, {
+    window.addEventListener("pagehide", sendReport, {
       once: true
     });
     // 监听用户交互
-    ['click', 'keydown', 'pointerdown'].forEach(function (type) {
+    ["click", "keydown", "pointerdown"].forEach(function (type) {
       window.addEventListener(type, sendReport, {
         once: true,
         capture: true
@@ -217,7 +218,7 @@
     });
     return function () {
       observer.disconnect();
-      document.removeEventListener('visibilitychange', onHidden);
+      document.removeEventListener("visibilitychange", onHidden);
     };
   }
   /*
@@ -235,15 +236,13 @@
   function startLoad(report) {
     var onPageShow = function onPageShow(event) {
       requestAnimationFrame(function () {
-        ["load"].forEach(function (type) {
-          var reportData = {
-            type: "performance",
-            name: 'Load',
-            pageUrl: window.location.href,
-            startTime: event.timeStamp
-          };
-          report(reportData);
-        });
+        var reportData = {
+          type: "performance",
+          name: "Load",
+          value: event.timeStamp,
+          pageUrl: window.location.href
+        };
+        report(reportData);
       });
     };
     window.addEventListener("pageshow", onPageShow, true);
@@ -265,12 +264,53 @@
   避让：当 pageshow 触发时，浏览器的主线程通常非常忙（正在忙着把页面画出来）。这时候如果直接塞一段 JS 逻辑进去，可能会让页面卡顿一下。
   时机：requestAnimationFrame 的意思是：“浏览器大哥，等你把当前这一帧画面画完，准备画下一帧之前的空档，顺手帮我执行一下这个”。
   这样做，能确保我们的代码是在页面第一帧渲染完成之后立即执行的，这个时间点更代表“用户真正看见页面”的时刻。
-  3. performance.now() - event.timeStamp 算的是什么？
-  event.timeStamp：浏览器触发“显示页面”这个动作的时刻。
-  performance.now()：代码实际执行（也就是画面渲染完那一刻）的时刻。
-  相减的结果：渲染延迟。
-  它在计算：从浏览器决定“要显示页面”，到页面真正“画好并能运行代码”，中间卡了多久。这个数值虽然很小，但能反映出当时页面的渲染压力。
-  */
+  **/
+
+  function startTTFB(report) {
+    // 监听导航条目
+    var observer = new PerformanceObserver(function (list) {
+      var entries = list.getEntries();
+      // 只取第一个导航条目
+      var _iterator = _createForOfIteratorHelper(entries),
+        _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var entry = _step.value;
+          if (entry.entryType === "navigation") {
+            var navEntry = entry;
+            // 计算 TTFB: responseStart - requestStart
+            // 实际上 responseStart 已经是相对于 navigationStart 的时间
+            // 但通常我们也关心它相对于请求开始的耗时，或者直接用 responseStart 代表用户感知的首字节时间
+            var ttfb = navEntry.responseStart - navEntry.startTime;
+            var reportData = {
+              type: "performance",
+              subType: "TTFB",
+              name: "TTFB",
+              value: ttfb,
+              pageUrl: window.location.href,
+              serviceWorkerTime: navEntry.workerStart > 0 ? navEntry.responseEnd - navEntry.workerStart : 0,
+              dnsTime: navEntry.domainLookupEnd - navEntry.domainLookupStart,
+              tcpTime: navEntry.connectEnd - navEntry.connectStart
+            };
+            report(reportData);
+            // 获取到后断开连接
+            observer.disconnect();
+          }
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+    });
+    observer.observe({
+      type: "navigation",
+      buffered: true
+    });
+    return function () {
+      return observer.disconnect();
+    };
+  }
 
   function startFID(report) {
     var observer = new PerformanceObserver(function (list) {
@@ -280,7 +320,7 @@
         for (_iterator.s(); !(_step = _iterator.n()).done;) {
           var entry = _step.value;
           // 核心公式：处理开始时间 - 点击时间 = 延迟时间
-          var delay = entry.processingStart - entry.startTime;
+          var delay = (entry.processingStart || entry.startTime) - entry.startTime;
           report({
             type: "performance",
             name: "FID",
@@ -300,17 +340,22 @@
       type: "first-input",
       buffered: true
     });
+    return function () {
+      return observer.disconnect();
+    };
   }
   function getSelector(el) {
     if (el instanceof Element) {
-      return el.tagName + (el.id ? '#' + el.id : '') + (el.className ? '.' + el.className : '');
+      return el.tagName + (el.id ? "#" + el.id : "") + (el.className ? "." + el.className : "");
     }
-    return '';
+    return "";
   }
 
   function startINP(durationThreshold, report) {
-    // 记录当前的 INP 值（最长的一次交互耗时）
-    var inpValue = 0;
+    var maxValue = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+    var enableBuffered = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+    // 记录当前的 INP 值（最长的一次交互耗时），如果有历史值，从历史值开始，避免 resume 后归零
+    var inpValue = maxValue;
     // 记录最长交互的目标元素（用于调试）
     var inpTarget = null;
     // 用于存储由于“同一次交互触发多个事件”时的最大耗时
@@ -367,8 +412,11 @@
     observer.observe({
       type: "event",
       durationThreshold: durationThreshold,
-      buffered: true
+      buffered: enableBuffered
     });
+    return function () {
+      return observer.disconnect();
+    };
   }
   //INP 代码：type: 'event'。这里我们不断监听，不断打 log。实际场景里，你需要维护一个数组，把耗时最长的几次交互存下来，最后上报那个最慢的。
   //durationThreshold: 16：这是个优化参数。意思是“小于 16ms（一帧）的交互我就不看了”，省得数据太多刷屏。
@@ -380,6 +428,7 @@
    */
 
   function startLongTask(threshold, report) {
+    var isBuffered = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
     var observer = new PerformanceObserver(function (list) {
       var _iterator = _createForOfIteratorHelper(list.getEntries()),
         _step;
@@ -409,13 +458,18 @@
     // 开启监听，buffered 同样重要
     observer.observe({
       type: "longtask",
-      buffered: true
+      buffered: isBuffered
     });
+    return function () {
+      return observer.disconnect();
+    };
   }
   //拆分任务：把一次性的大计算拆成多个小段，并在每段之间主动“让路”。常用手段：setTimeout(0) 切片、requestAnimationFrame 在绘制后继续、requestIdleCallback 在空闲期执行、重度计算迁移到 Web Worker。注意：requestIdleCallback 在后台标签页会被强烈限速，不适合关键路径。
 
   function startCLS(report) {
-    var clsValue = 0;
+    var initialCLS = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+    var buffered = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+    var clsValue = initialCLS;
     var sessionValue = 0;
     var gap = 1000;
     var maxDuration = 5000;
@@ -437,9 +491,14 @@
               sessionValue += entry.value;
               sessionEntries.push(entry);
             } else {
-              // 新起一个会话，先结算上一个
+              // 此时我们必须“结算”上一个窗口的总分。如果上一个窗口的总分 (sessionValue) 是历史最高的，我们就把它更新为当前的 CLS 值并上报。
               if (sessionValue > clsValue) {
                 clsValue = sessionValue;
+                report({
+                  type: "performance",
+                  name: "CLS",
+                  value: clsValue
+                });
               }
               // 重置
               sessionValue = entry.value;
@@ -448,6 +507,11 @@
             // 实时更新最大值，因为如果当前正在进行且还没断开，可能已经超过之前最大的了
             if (sessionValue > clsValue) {
               clsValue = sessionValue;
+              report({
+                type: "performance",
+                name: "CLS",
+                value: clsValue
+              });
             }
           }
         }
@@ -458,25 +522,31 @@
       }
     });
     observer.observe({
-      type: 'layout-shift',
-      buffered: true
+      type: "layout-shift",
+      buffered: buffered
     });
     var sendReport = function sendReport() {
       report({
-        type: 'performance',
-        name: 'CLS',
+        type: "performance",
+        name: "CLS",
         value: clsValue
       });
     };
     // 双重保险：兼容各类浏览器的卸载场景
-    window.addEventListener('pagehide', sendReport, {
+    var onVisibilityChange = function onVisibilityChange() {
+      if (document.visibilityState === "hidden") sendReport();
+    };
+    window.addEventListener("pagehide", sendReport, {
       once: true
     });
-    document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'hidden') sendReport();
-    }, {
+    document.addEventListener("visibilitychange", onVisibilityChange, {
       once: true
     });
+    return function () {
+      observer.disconnect();
+      window.removeEventListener("pagehide", sendReport);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }
   /**
    * 为啥要监听两个卸载事件？
@@ -492,6 +562,7 @@
    */
 
   function startEntries(threshold, report) {
+    var isBuffered = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
     var observer = new PerformanceObserver(function (list) {
       var _iterator = _createForOfIteratorHelper(list.getEntries()),
         _step;
@@ -500,11 +571,11 @@
           var entry = _step.value;
           // resource 类型包含了 img, script, css, fetch, xmlhttprequest, link 等
           // 我们这里排除 fetch 和 xmlhttprequest，因为它们在 startRequest 中单独处理
-          if (entry.entryType === "resource" && entry.initiatorType !== "fetch" && entry.initiatorType !== "xmlhttprequest" && entry.duration > threshold // 阈值：只上报超过阈值的慢资源
+          if (entry.entryType === "resource" && entry.initiatorType !== "fetch" && entry.initiatorType !== "xmlhttprequest" && entry.initiatorType !== "beacon" && entry.duration > threshold // 阈值：只上报超过阈值的慢资源
           ) {
             report({
               resourceName: entry.name,
-              name: 'Resource',
+              name: "Resource",
               initiatorType: entry.initiatorType,
               duration: entry.duration,
               startTime: entry.startTime
@@ -520,8 +591,11 @@
     // 同样记得 buffered: true，防止漏掉页面刚开始加载的那些资源
     observer.observe({
       type: "resource",
-      buffered: true
+      buffered: isBuffered
     });
+    return function () {
+      return observer.disconnect();
+    };
   }
   /**
   entryType === 'resource'：这个频道包罗万象。图片 (img)、样式 (css)、脚本 (script) 甚至你的接口调用 (fetch/xmlhttprequest) 都在这儿。
@@ -530,6 +604,8 @@
    */
 
   function startRequest(threshold, report) {
+    var isBuffered = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+    var excludeUrl = arguments.length > 3 ? arguments[3] : undefined;
     var entryHandler = function entryHandler(list) {
       var data = list.getEntries();
       var _iterator = _createForOfIteratorHelper(data),
@@ -537,11 +613,15 @@
       try {
         for (_iterator.s(); !(_step = _iterator.n()).done;) {
           var entry = _step.value;
+          // 过滤掉上报接口自身的请求，防止无限循环
+          if (excludeUrl && entry.name.includes(excludeUrl)) {
+            continue;
+          }
           // 过滤出 API 请求 (Fetch 和 XHR)
-          if ((entry.initiatorType === "fetch" || entry.initiatorType === "xmlhttprequest") && entry.duration > threshold // 阈值：只上报超过阈值的慢请求
+          if ((entry.initiatorType === "fetch" || entry.initiatorType === "xmlhttprequest" || entry.initiatorType === "beacon") && entry.duration > threshold // 阈值：只上报超过阈值的慢请求
           ) {
             var reportData = {
-              name: 'Request',
+              name: "Request",
               target: entry.name,
               // 接口地址
               type: "performance",
@@ -577,32 +657,75 @@
     var observer = new PerformanceObserver(entryHandler);
     observer.observe({
       type: "resource",
-      buffered: true
+      buffered: isBuffered
     });
+    return function () {
+      return observer.disconnect();
+    };
   }
 
-  /**
-   * @file reporter.ts
-   * @description 核心数据收集器，负责存储和管理性能指标
-   */
+  var report = function report(data, url) {
+    if (!url) return;
+    // 1. 包装数据：加上一些公共信息（比如 UserAgent，屏幕分辨率等）
+    var dataToSend = Object.assign(Object.assign({}, data), {
+      userAgent: navigator.userAgent
+    });
+    // 2. 优先使用 sendBeacon (最稳，且不阻塞)
+    // 注意：sendBeacon 不支持自定义 Content-Type，默认是 text/plain
+    // 这里用 Blob 强制指定为 application/json
+    if (navigator.sendBeacon) {
+      var blob = new Blob([JSON.stringify(dataToSend)], {
+        type: "application/json"
+      });
+      // sendBeacon 返回 true 表示进入队列成功
+      navigator.sendBeacon(url, blob);
+      return;
+    } else {
+      // 3. 降级方案：使用 fetch + keepalive
+      // 即使页面关闭，keepalive 也能保证请求发出
+      fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(dataToSend),
+        keepalive: true // <--- 关键参数！防止页面关闭时请求被杀
+      })["catch"](function (err) {
+        console.error("上报失败:", err);
+      });
+    }
+  };
+
   var Reporter = /*#__PURE__*/function () {
     function Reporter() {
       _classCallCheck(this, Reporter);
       this.metrics = {};
       this.metrics = {};
     }
-    /**
-     * 收集单个指标
-     * @param data 性能数据
-     */
     return _createClass(Reporter, [{
+      key: "setReportUrl",
+      value: function setReportUrl(url) {
+        this.reportUrl = url;
+      }
+      /**
+       * 收集单个指标
+       * @param data 性能数据
+       */
+    }, {
       key: "collect",
       value: function collect(data) {
-        // 可以在这里添加数据处理逻辑，例如去重或格式化
-        if (!this.metrics[data.name]) {
-          this.metrics[data.name] = [];
+        var rewrite = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+        if (rewrite) {
+          this.metrics[data.name] = [data];
+        } else {
+          if (!this.metrics[data.name]) {
+            this.metrics[data.name] = [];
+          }
+          this.metrics[data.name].push(data);
         }
-        this.metrics[data.name].push(data);
+        if (this.reportUrl) {
+          report(data, this.reportUrl);
+        }
       }
       /**
        * 获取所有收集到的指标
@@ -620,53 +743,176 @@
       value: function clear() {
         this.metrics = {};
       }
+      /**
+       * 清空指定类型的指标
+       * @param keys 要清空的指标名称列表
+       */
+    }, {
+      key: "clearMetrics",
+      value: function clearMetrics(keys) {
+        var _this = this;
+        keys.forEach(function (key) {
+          delete _this.metrics[key];
+        });
+      }
     }]);
   }();
 
   var PerformanceMonitor = /*#__PURE__*/function () {
     function PerformanceMonitor() {
-      var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
-        resourceThreshold: 100,
-        requestThreshold: 100,
-        inpThreshold: 24,
-        longTaskThreshold: 10
-      };
+      var _this = this;
       _classCallCheck(this, PerformanceMonitor);
-      this.options = Object.assign({}, options);
+      this.cleanups = [];
+      this.metricsStatus = new Map();
+      this.loadCleanup = null;
+      // 如果已经有实例，直接返回
+      if (PerformanceMonitor.instance) {
+        return PerformanceMonitor.instance;
+      }
       this.reporter = new Reporter();
+      this.metricsStatus = new Map();
+      PerformanceMonitor.instance = this;
+      // 立即监听 Load，确保不漏掉早期事件
+      var collect = this.reporter.collect.bind(this.reporter);
+      this.loadCleanup = startLoad(function (data) {
+        if (!_this.metricsStatus.has("Load")) {
+          collect(data);
+          _this.metricsStatus.set("Load", 0);
+        }
+      });
     }
     return _createClass(PerformanceMonitor, [{
       key: "init",
       value: function init() {
-        var report = this.reporter.collect.bind(this.reporter);
+        var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
+          resourceThreshold: 500,
+          requestThreshold: 500,
+          inpThreshold: 24,
+          longTaskThreshold: 50
+        };
+        this.options = Object.assign({}, options);
+        if (this.options.reportUrl) {
+          this.reporter.setReportUrl(this.options.reportUrl.trim());
+        }
+        this.scan(true);
+        console.log("Performance Monitor Initialized");
+      }
+      // 重置并应用新配置
+    }, {
+      key: "reset",
+      value: function reset(newOptions) {
+        this.stop();
+        this.clearMetrics(["INP", "LongTask", "Resource", "Request"]);
+        this.options = Object.assign(Object.assign({}, this.options), newOptions);
+        if (this.options.reportUrl) {
+          this.reporter.setReportUrl(this.options.reportUrl.trim());
+        }
+        this.resume();
+      }
+    }, {
+      key: "scan",
+      value: function scan() {
+        var _this2 = this;
+        var enableBuffered = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+        // 避免重复监听
+        if (this.cleanups.length > 0) return;
+        var collect = this.reporter.collect.bind(this.reporter);
         // 1. 页面加载与渲染 (Loading & Rendering)
-        startFPFPC(report);
-        startLCP(report);
-        startLoad(report);
+        if (!this.metricsStatus.has("FCP")) {
+          this.cleanups.push(startFPFPC(function (data) {
+            if (!_this2.metricsStatus.has(data.name)) {
+              collect(data);
+              _this2.metricsStatus.set(data.name, 0);
+            }
+          }));
+        }
+        if (!this.metricsStatus.has("LCP")) {
+          this.cleanups.push(startLCP(function (data) {
+            collect(data, true);
+            _this2.metricsStatus.set("LCP", data.value);
+          }));
+        }
+        // 检查 Load 是否已由构造函数启动 (loadCleanup) 或已完成 (metricsStatus)
+        if (!this.metricsStatus.has("Load") && !this.loadCleanup) {
+          this.cleanups.push(startLoad(function (data) {
+            if (!_this2.metricsStatus.has("Load")) {
+              collect(data);
+              _this2.metricsStatus.set("Load", 0);
+            }
+          }));
+        }
+        if (!this.metricsStatus.has("TTFB")) {
+          this.cleanups.push(startTTFB(function (data) {
+            if (!_this2.metricsStatus.has("TTFB")) {
+              collect(data);
+              _this2.metricsStatus.set("TTFB", 0);
+            }
+          })); //为啥加两次判断 防止buffered=true然后重复上报
+        }
         // // 2. 交互响应 (Interaction)
-        startFID(report);
-        startINP(this.options.inpThreshold, report);
-        startLongTask(this.options.longTaskThreshold, report);
+        if (!this.metricsStatus.has("FID")) {
+          this.cleanups.push(startFID(function (data) {
+            if (!_this2.metricsStatus.has("FID")) {
+              collect(data);
+              _this2.metricsStatus.set("FID", 0);
+            }
+          }));
+        }
+        var maxINP = this.metricsStatus.get("INP") || 0;
+        this.cleanups.push(startINP(this.options.inpThreshold, function (data) {
+          collect(data, true);
+          _this2.metricsStatus.set("INP", data.value);
+        }, maxINP, enableBuffered)); //inp需要用到历史值
+        this.cleanups.push(startLongTask(this.options.longTaskThreshold, collect, enableBuffered));
         // // 3. 视觉稳定性 (Visual Stability)
-        startCLS(report);
+        var maxCLS = this.metricsStatus.get("CLS") || 0;
+        this.cleanups.push(startCLS(function (data) {
+          collect(data);
+          _this2.metricsStatus.set("CLS", data.value);
+        }, maxCLS, enableBuffered));
         // // 4. 资源与网络 (Resource & Network)
         // 默认阈值为 1000ms，也可通过入参自定义配置
-        startEntries(this.options.resourceThreshold, report);
-        startRequest(this.options.requestThreshold, report);
-        console.log("Performance Monitor Initialized");
+        this.cleanups.push(startEntries(this.options.resourceThreshold, collect, enableBuffered));
+        this.cleanups.push(startRequest(this.options.requestThreshold, collect, enableBuffered, this.options.reportUrl));
+      }
+    }, {
+      key: "stop",
+      value: function stop() {
+        this.cleanups.forEach(function (fn) {
+          return fn && fn();
+        });
+        this.cleanups = [];
+        if (this.loadCleanup) {
+          this.loadCleanup();
+          this.loadCleanup = null;
+        }
+        console.log("Performance Monitor Stopped");
+      }
+    }, {
+      key: "resume",
+      value: function resume() {
+        this.scan(false);
+        console.log("Performance Monitor Resumed");
       }
     }, {
       key: "getMetrics",
       value: function getMetrics() {
         return this.reporter.getMetrics();
       }
+    }, {
+      key: "clearMetrics",
+      value: function clearMetrics(keys) {
+        var _this3 = this;
+        this.reporter.clearMetrics(keys);
+        keys.forEach(function (key) {
+          _this3.metricsStatus["delete"](key);
+        });
+      }
     }]);
   }();
+  PerformanceMonitor.instance = null;
 
-  exports.Reporter = Reporter;
-  exports.default = PerformanceMonitor;
-
-  Object.defineProperty(exports, '__esModule', { value: true });
+  return PerformanceMonitor;
 
 }));
 //# sourceMappingURL=index.umd.js.map
