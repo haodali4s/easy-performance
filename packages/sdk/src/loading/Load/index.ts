@@ -1,6 +1,23 @@
 // src/loading/load.ts
 
 export function startLoad(report: (data: any) => void) {
+  if (document.readyState === "complete") {
+    //如果pageshow在组件初始化时已经触发了，那么就直接执行
+    requestAnimationFrame(() => {
+      const navEntry = performance.getEntriesByType(
+        "navigation",
+      )[0] as PerformanceNavigationTiming;
+      const reportData = {
+        type: "performance",
+        name: "Load",
+        value: navEntry ? navEntry.loadEventEnd : performance.now(),
+        pageUrl: window.location.href,
+      };
+      report(reportData);
+    });
+    return () => {};
+  }
+
   const onPageShow = (event: any) => {
     requestAnimationFrame(() => {
       const reportData = {

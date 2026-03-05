@@ -177,7 +177,6 @@ const PerformanceDebugger: React.FC = () => {
 
     const monitor = monitorRef.current;
     if (monitor) {
-      console.log("Stopping Monitor...");
       // 获取当前数据
       const data = monitor.getMetrics();
       setMetrics(data);

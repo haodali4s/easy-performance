@@ -17,6 +17,5 @@
   "license": "ISC",
   "description": "",
   "type": "module",
-  "types": "dist/index.d.ts",
-  "dependencies": {}
+  "types": "dist/index.d.ts"
 }

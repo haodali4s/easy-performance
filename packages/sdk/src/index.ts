@@ -54,7 +54,9 @@ export default class PerformanceMonitor {
       this.reporter.setReportUrl(this.options.reportUrl.trim());
     }
     this.scan(true);
-    console.log("Performance Monitor Initialized");
+    if (import.meta.env.DEV) {
+      console.log("Performance Monitor Initialized");
+    }
   }
 
   // 重置并应用新配置
@@ -173,12 +175,16 @@ export default class PerformanceMonitor {
       this.loadCleanup();
       this.loadCleanup = null;
     }
-    console.log("Performance Monitor Stopped");
+    if (import.meta.env.DEV) {
+      console.log("Performance Monitor Stopped");
+    }
   }
 
   resume() {
     this.scan(false);
-    console.log("Performance Monitor Resumed");
+    if (import.meta.env.DEV) {
+      console.log("Performance Monitor Resumed");
+    }
   }
 
   getMetrics() {

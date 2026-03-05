@@ -1,6 +1,6 @@
 {
   "name": "easy-performance",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "A visualization dashboard for easy-performance monitor",
   "keywords": [
     "performance",
@@ -38,7 +38,6 @@
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
-  "dependencies": {},
   "devDependencies": {
     "@monitor/sdk": "workspace:*",
     "less": "^4.5.1",
